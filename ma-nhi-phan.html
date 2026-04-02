@@ -1,0 +1,1740 @@
+<!-- ==========================================
+     TRANSLATE WIDGET - Dịch Ngôn Ngữ Popup
+     Thêm đoạn code này vào trước thẻ </body>
+     ========================================== -->
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+  #tw-root * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* --- Floating Button --- */
+  #tw-fab {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 99999;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    box-shadow: 0 4px 20px rgba(26,115,232,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s;
+    outline: none;
+  }
+  #tw-fab:hover {
+    transform: scale(1.1) rotate(-5deg);
+    box-shadow: 0 6px 28px rgba(26,115,232,0.6);
+  }
+  #tw-fab svg { width: 26px; height: 26px; fill: #fff; transition: transform 0.3s; }
+  #tw-fab.active { background: linear-gradient(135deg, #0d47a1, #1a73e8); }
+  #tw-fab.active svg { transform: rotate(180deg); }
+
+  /* Pulse ring */
+  #tw-fab::after {
+    content: '';
+    position: absolute;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    border: 2px solid rgba(26,115,232,0.5);
+    animation: tw-pulse 2s ease-out infinite;
+  }
+  @keyframes tw-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
+
+  /* --- Popup Panel --- */
+  #tw-panel {
+    position: fixed;
+    bottom: 96px;
+    right: 28px;
+    z-index: 99998;
+    width: 340px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow: hidden;
+    transform: scale(0.85) translateY(20px);
+    transform-origin: bottom right;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease;
+  }
+  #tw-panel.open {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* Header */
+  #tw-header {
+    background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+    padding: 18px 20px 14px;
+    color: #fff;
+  }
+  #tw-header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  #tw-header-top svg { width: 22px; height: 22px; fill: rgba(255,255,255,0.9); flex-shrink: 0; }
+  #tw-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: #fff;
+  }
+  #tw-subtitle {
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.72);
+    padding-left: 32px;
+    line-height: 1.4;
+  }
+
+  /* Body */
+  #tw-body { padding: 16px 18px 18px; }
+
+  /* Lang row */
+  .tw-lang-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .tw-lang-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .tw-lang-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #9aa0a6;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .tw-lang-select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #202124;
+    background: #f8f9fa;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='%239aa0a6'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+  }
+  .tw-lang-select:focus { border-color: #1a73e8; background: #fff; }
+
+  /* Swap button */
+  #tw-swap {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid #e0e0e0;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 18px;
+    transition: background 0.2s, border-color 0.2s, transform 0.3s;
+    outline: none;
+  }
+  #tw-swap:hover { background: #e8f0fe; border-color: #1a73e8; transform: rotate(180deg); }
+  #tw-swap svg { width: 16px; height: 16px; fill: #5f6368; }
+  #tw-swap:hover svg { fill: #1a73e8; }
+
+  /* Translate button */
+  #tw-translate-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #1a73e8, #1557b0);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.2s, transform 0.15s;
+    outline: none;
+    letter-spacing: -0.1px;
+  }
+  #tw-translate-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  #tw-translate-btn:active { transform: translateY(0); opacity: 1; }
+  #tw-translate-btn svg { width: 18px; height: 18px; fill: #fff; }
+
+  /* Status bar */
+  #tw-status {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.4;
+  }
+  #tw-status.info { background: #e8f0fe; color: #1a73e8; display: flex; }
+  #tw-status.success { background: #e6f4ea; color: #137333; display: flex; }
+  #tw-status.error { background: #fce8e6; color: #c5221f; display: flex; }
+  #tw-status.loading { background: #f1f3f4; color: #5f6368; display: flex; }
+
+  /* Restore button */
+  #tw-restore-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 9px;
+    background: transparent;
+    color: #5f6368;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+    outline: none;
+  }
+  #tw-restore-btn:hover { background: #f1f3f4; border-color: #bdc1c6; color: #202124; }
+  #tw-restore-btn svg { width: 14px; height: 14px; fill: currentColor; }
+
+  /* Spinner */
+  .tw-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(26,115,232,0.3);
+    border-top-color: #1a73e8;
+    border-radius: 50%;
+    animation: tw-spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes tw-spin { to { transform: rotate(360deg); } }
+
+  /* Divider */
+  .tw-divider {
+    height: 1px;
+    background: #f1f3f4;
+    margin: 14px 0;
+  }
+
+  /* Footer */
+  #tw-footer {
+    padding: 0 18px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: #9aa0a6;
+    font-size: 11px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  #tw-footer svg { width: 13px; height: 13px; fill: #9aa0a6; }
+
+  /* Dark overlay on mobile */
+  @media (max-width: 400px) {
+    #tw-panel { width: calc(100vw - 32px); right: 16px; bottom: 84px; }
+    #tw-fab { right: 16px; bottom: 16px; }
+  }
+</style>
+
+<div id="tw-root">
+  <!-- FAB Button -->
+  <button id="tw-fab" title="Dịch trang">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+    </svg>
+  </button>
+
+  <!-- Popup Panel -->
+  <div id="tw-panel">
+    <!-- Header -->
+    <div id="tw-header">
+      <div id="tw-header-top">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        <span id="tw-title">Dịch Trang</span>
+      </div>
+      <div id="tw-subtitle">Dịch nội dung trang sang ngôn ngữ khác</div>
+    </div>
+
+    <!-- Body -->
+    <div id="tw-body">
+      <div class="tw-lang-row">
+        <div class="tw-lang-box">
+          <span class="tw-lang-label">Ngôn ngữ gốc</span>
+          <select class="tw-lang-select" id="tw-src-lang">
+            <option value="auto">🌐 Tự động nhận diện</option>
+            <option value="vi" selected>🇻🇳 Tiếng Việt</option>
+            <option value="en">🇺🇸 English</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+
+        <button id="tw-swap" title="Hoán đổi ngôn ngữ">
+          <svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
+        </button>
+
+        <div class="tw-lang-box">
+          <span class="tw-lang-label">Dịch sang</span>
+          <select class="tw-lang-select" id="tw-dest-lang">
+            <option value="en" selected>🇺🇸 English</option>
+            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="tw-translate-btn">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        Dịch trang ngay
+      </button>
+
+      <div id="tw-status"></div>
+
+      <button id="tw-restore-btn">
+        <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7v4l5-5-5-5v4z"/></svg>
+        Khôi phục bản gốc
+      </button>
+    </div>
+
+    <div class="tw-divider"></div>
+
+    <div id="tw-footer">
+      <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.987 7.987 0 0 1 5.08 16zm2.95-8H5.08a7.987 7.987 0 0 1 4.33-3.56A15.65 15.65 0 0 0 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
+      Hỗ trợ bởi Google Translate
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const fab = document.getElementById('tw-fab');
+  const panel = document.getElementById('tw-panel');
+  const translateBtn = document.getElementById('tw-translate-btn');
+  const restoreBtn = document.getElementById('tw-restore-btn');
+  const statusEl = document.getElementById('tw-status');
+  const srcLang = document.getElementById('tw-src-lang');
+  const destLang = document.getElementById('tw-dest-lang');
+  const swapBtn = document.getElementById('tw-swap');
+
+  let isTranslated = false;
+  let originalTexts = []; // { node, original }
+  let isLoading = false;
+
+  // === Toggle panel ===
+  fab.addEventListener('click', () => {
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open');
+    fab.classList.toggle('active');
+    if (!isOpen) setStatus('info', '🌐 Chọn ngôn ngữ và nhấn Dịch trang ngay');
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('tw-root').contains(e.target)) {
+      panel.classList.remove('open');
+      fab.classList.remove('active');
+    }
+  });
+
+  // === Swap languages ===
+  swapBtn.addEventListener('click', () => {
+    const s = srcLang.value === 'auto' ? destLang.value : srcLang.value;
+    const d = srcLang.value === 'auto' ? 'vi' : destLang.value;
+    // Only swap if src is not auto
+    if (srcLang.value !== 'auto') {
+      const tmp = srcLang.value;
+      srcLang.value = destLang.value;
+      destLang.value = tmp;
+    }
+  });
+
+  // === Status helper ===
+  function setStatus(type, msg, spinner = false) {
+    statusEl.className = 'tw-status ' + type;
+    statusEl.innerHTML = spinner
+      ? `<div class="tw-spinner"></div><span>${msg}</span>`
+      : `<span>${msg}</span>`;
+    statusEl.style.display = 'flex';
+  }
+  function hideStatus() { statusEl.style.display = 'none'; }
+
+  // === Get all visible text nodes ===
+  function getTextNodes(root) {
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          const tag = parent.tagName.toUpperCase();
+          // Skip script, style, noscript, tw-root
+          if (['SCRIPT','STYLE','NOSCRIPT','TEXTAREA','INPUT'].includes(tag)) return NodeFilter.FILTER_REJECT;
+          if (parent.closest('#tw-root')) return NodeFilter.FILTER_REJECT;
+          if (node.textContent.trim().length < 2) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+    const nodes = [];
+    let n;
+    while ((n = walker.nextNode())) nodes.push(n);
+    return nodes;
+  }
+
+  // === Chunk array ===
+  function chunk(arr, size) {
+    const res = [];
+    for (let i = 0; i < arr.length; i += size) res.push(arr.slice(i, i + size));
+    return res;
+  }
+
+  // === Translate a batch of texts via Google Translate (no key needed) ===
+  async function translateTexts(texts, src, dest) {
+    const joined = texts.join('\n\n||||\n\n');
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${src}&tl=${dest}&dt=t&q=${encodeURIComponent(joined)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Lỗi kết nối API dịch');
+    const data = await res.json();
+    // Parse result
+    const translated = data[0].map(item => item[0]).join('');
+    return translated.split('\n\n||||\n\n');
+  }
+
+  // === Main translate ===
+  translateBtn.addEventListener('click', async () => {
+    if (isLoading) return;
+
+    const dest = destLang.value;
+    const src = srcLang.value;
+
+    if (src !== 'auto' && src === dest) {
+      setStatus('error', '⚠️ Ngôn ngữ gốc và đích không được giống nhau!');
+      return;
+    }
+
+    // Restore if already translated
+    if (isTranslated) restoreOriginal();
+
+    isLoading = true;
+    translateBtn.disabled = true;
+    setStatus('loading', 'Đang thu thập nội dung...', true);
+
+    try {
+      const textNodes = getTextNodes(document.body);
+      if (textNodes.length === 0) throw new Error('Không tìm thấy nội dung để dịch');
+
+      originalTexts = textNodes.map(n => ({ node: n, original: n.textContent }));
+      const texts = originalTexts.map(t => t.original.trim());
+
+      setStatus('loading', `Đang dịch ${texts.length} đoạn văn...`, true);
+
+      // Batch: 40 texts per request
+      const batches = chunk(texts, 40);
+      const results = [];
+
+      for (let i = 0; i < batches.length; i++) {
+        setStatus('loading', `Dịch batch ${i+1}/${batches.length}...`, true);
+        const translated = await translateTexts(batches[i], src, dest);
+        results.push(...translated);
+        if (i < batches.length - 1) await new Promise(r => setTimeout(r, 300));
+      }
+
+      // Apply translations
+      originalTexts.forEach((item, idx) => {
+        if (results[idx] !== undefined) {
+          item.node.textContent = results[idx];
+        }
+      });
+
+      isTranslated = true;
+      const destName = destLang.options[destLang.selectedIndex].text.replace(/^[^\s]+\s/, '');
+      setStatus('success', `✅ Đã dịch sang ${destName} thành công!`);
+      restoreBtn.style.display = 'flex';
+
+    } catch (err) {
+      console.error('Translate error:', err);
+      setStatus('error', `❌ ${err.message || 'Lỗi không xác định. Vui lòng thử lại.'}`);
+      restoreOriginal();
+    } finally {
+      isLoading = false;
+      translateBtn.disabled = false;
+    }
+  });
+
+  // === Restore ===
+  function restoreOriginal() {
+    originalTexts.forEach(({ node, original }) => {
+      try { node.textContent = original; } catch(e) {}
+    });
+    originalTexts = [];
+    isTranslated = false;
+    restoreBtn.style.display = 'none';
+  }
+
+  restoreBtn.addEventListener('click', () => {
+    restoreOriginal();
+    setStatus('info', '🔄 Đã khôi phục nội dung gốc');
+  });
+
+})();
+</script>
+<!-- ========================================== --><!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mã Nhị Phân — Ngôn Ngữ Nền Tảng Của Thế Giới Số</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300;1,8..60,400&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1209;
+    --ink-light: #3d2f1a;
+    --paper: #f5f0e8;
+    --paper-dark: #ede6d6;
+    --accent: #c0392b;
+    --accent-gold: #b8860b;
+    --accent-light: #e8d5b7;
+    --rule: #8b7355;
+    --mono: #2c5f2e;
+    --mono-bg: #f0f5f0;
+    --shadow: rgba(26,18,9,0.15);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.75;
+    min-height: 100vh;
+  }
+
+  /* BACKGROUND TEXTURE */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(139,115,85,0.04) 28px, rgba(139,115,85,0.04) 29px);
+    pointer-events: none;
+  }
+
+  /* ===== MASTHEAD ===== */
+  .masthead {
+    background: var(--ink);
+    color: var(--paper);
+    text-align: center;
+    padding: 2rem 1rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .masthead::before {
+    content: '01001101 01000001 00100000 01001110 01001000 01001001 00100000 01010000 01001000 01000001 01001110';
+    position: absolute; inset: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.04);
+    word-break: break-all;
+    padding: 1rem;
+    line-height: 1.6;
+    letter-spacing: 0.05em;
+    pointer-events: none;
+  }
+
+  .masthead-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent-gold);
+    margin-bottom: 1rem;
+    opacity: 0.9;
+  }
+
+  .masthead h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 7vw, 5.5rem);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    position: relative;
+    z-index: 1;
+  }
+
+  .masthead h1 span.accent { color: var(--accent); }
+  .masthead h1 span.binary-inline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.45em;
+    color: rgba(255,255,255,0.4);
+    display: block;
+    letter-spacing: 0.1em;
+    margin-top: 0.5rem;
+  }
+
+  .masthead-sub {
+    font-family: 'Source Serif 4', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: rgba(245,240,232,0.7);
+    margin-top: 1.2rem;
+    position: relative; z-index: 1;
+  }
+
+  .masthead-meta {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: rgba(255,255,255,0.45);
+    position: relative; z-index: 1;
+    flex-wrap: wrap;
+  }
+
+  /* ===== NAV BAR ===== */
+  .nav-bar {
+    background: var(--paper-dark);
+    border-top: 3px solid var(--accent);
+    border-bottom: 1px solid var(--rule);
+    position: sticky; top: 0; z-index: 100;
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .nav-bar::-webkit-scrollbar { display: none; }
+
+  .nav-bar a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    text-decoration: none;
+    padding: 0.7rem 1.2rem;
+    white-space: nowrap;
+    border-right: 1px solid var(--rule);
+    transition: background 0.2s, color 0.2s;
+  }
+  .nav-bar a:first-child { border-left: 1px solid var(--rule); }
+  .nav-bar a:hover { background: var(--ink); color: var(--paper); }
+
+  /* ===== LAYOUT ===== */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    position: relative; z-index: 1;
+  }
+
+  .article-body {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 3rem 0;
+  }
+
+  /* ===== SECTION STYLES ===== */
+  section {
+    padding: 2.5rem 0;
+    border-bottom: 1px solid var(--accent-light);
+  }
+  section:last-of-type { border-bottom: none; }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--accent-light);
+  }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ink);
+    margin-bottom: 1.5rem;
+  }
+
+  h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-style: italic;
+    color: var(--ink-light);
+    margin: 1.8rem 0 0.8rem;
+  }
+
+  p { margin-bottom: 1.2rem; }
+
+  /* ===== LEAD / DROPCAP ===== */
+  .lead-paragraph::first-letter {
+    font-family: 'Playfair Display', serif;
+    font-size: 5rem;
+    font-weight: 900;
+    float: left;
+    line-height: 0.8;
+    margin: 0.15em 0.1em 0 0;
+    color: var(--accent);
+    text-shadow: 3px 3px 0 var(--paper-dark);
+  }
+
+  .lead-paragraph {
+    font-size: 1.1rem;
+    font-style: italic;
+    color: var(--ink-light);
+  }
+
+  /* ===== PULL QUOTE ===== */
+  .pull-quote {
+    border-left: 5px solid var(--accent);
+    border-right: 1px solid var(--accent-light);
+    background: var(--paper-dark);
+    padding: 1.5rem 2rem;
+    margin: 2rem 0;
+    position: relative;
+  }
+  .pull-quote::before {
+    content: '\201C';
+    font-family: 'Playfair Display', serif;
+    font-size: 6rem;
+    color: var(--accent-light);
+    position: absolute;
+    top: -1.5rem;
+    left: 1rem;
+    line-height: 1;
+  }
+  .pull-quote p {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--ink);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  /* ===== FACT BOX ===== */
+  .fact-box {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 1.5rem;
+    margin: 2rem 0;
+    position: relative;
+  }
+  .fact-box-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent-gold);
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    padding-bottom: 0.5rem;
+  }
+  .fact-box p { color: rgba(245,240,232,0.85); margin-bottom: 0.5rem; font-size: 0.95rem; }
+  .fact-box p:last-child { margin-bottom: 0; }
+  .fact-box strong { color: var(--accent-gold); }
+
+  /* ===== TIMELINE ===== */
+  .timeline {
+    position: relative;
+    padding-left: 2rem;
+    margin: 1.5rem 0;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--accent), var(--accent-light));
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -1.625rem;
+    top: 0.35rem;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--paper);
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  .timeline-year {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+  .timeline-item p { margin-bottom: 0; font-size: 0.95rem; }
+
+  /* ===== BIT TABLE ===== */
+  .bit-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+  }
+  .bit-table th {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 0.6rem 1rem;
+    text-align: left;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .bit-table td {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--accent-light);
+    vertical-align: middle;
+  }
+  .bit-table tr:nth-child(even) td { background: var(--paper-dark); }
+  .bit-table tr:hover td { background: var(--accent-light); }
+  .bit-table .binary-cell {
+    color: var(--mono);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+  .bit-table .char-cell {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  /* ===== APP GRID ===== */
+  .app-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .app-card {
+    background: var(--paper-dark);
+    border: 1px solid var(--accent-light);
+    border-top: 3px solid var(--accent);
+    padding: 1.2rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .app-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px var(--shadow);
+  }
+  .app-card-icon {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.3rem;
+    color: var(--mono);
+    margin-bottom: 0.5rem;
+  }
+  .app-card-title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 0.4rem;
+  }
+  .app-card p { font-size: 0.85rem; color: var(--ink-light); margin: 0; }
+
+  /* ===== CONVERTER ===== */
+  #converter {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 2.5rem;
+    margin: 0 -1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #converter::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(
+      90deg,
+      transparent, transparent 20px,
+      rgba(255,255,255,0.015) 20px, rgba(255,255,255,0.015) 21px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent, transparent 20px,
+      rgba(255,255,255,0.015) 20px, rgba(255,255,255,0.015) 21px
+    );
+    pointer-events: none;
+  }
+
+  .converter-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative; z-index: 1;
+  }
+  .converter-header .section-label {
+    color: var(--accent-gold);
+    justify-content: center;
+  }
+  .converter-header .section-label::after,
+  .converter-header .section-label::before {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    max-width: 80px;
+  }
+  .converter-header h2 {
+    color: var(--paper);
+    font-size: clamp(1.4rem, 3.5vw, 2rem);
+  }
+
+  .converter-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 2rem;
+    position: relative; z-index: 1;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px;
+    overflow: hidden;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    color: white;
+  }
+  .tab-btn:not(.active):hover { background: rgba(255,255,255,0.1); color: white; }
+
+  .converter-panel {
+    position: relative; z-index: 1;
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+  .converter-panel.active { display: block; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .conv-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 0.4rem;
+    display: block;
+  }
+
+  .conv-textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 1rem;
+    border-radius: 2px;
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.7;
+    transition: border-color 0.2s;
+  }
+  .conv-textarea:focus {
+    outline: none;
+    border-color: var(--accent-gold);
+    background: rgba(255,255,255,0.08);
+  }
+  .conv-textarea::placeholder { color: rgba(255,255,255,0.2); }
+
+  .conv-arrow {
+    text-align: center;
+    padding: 0.8rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.5rem;
+    color: var(--accent-gold);
+    position: relative;
+  }
+
+  .conv-btn {
+    display: block;
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 0.9rem 1.5rem;
+    cursor: pointer;
+    margin: 0.8rem 0;
+    transition: background 0.2s, transform 0.1s;
+    border-radius: 2px;
+  }
+  .conv-btn:hover { background: #a93226; }
+  .conv-btn:active { transform: scale(0.99); }
+
+  .conv-result {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-left: 3px solid var(--accent-gold);
+    padding: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: #a8d8a8;
+    word-break: break-all;
+    min-height: 80px;
+    border-radius: 2px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    display: none;
+  }
+  .conv-result.has-content { display: block; }
+
+  .conv-result-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--accent-gold);
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .copy-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.5);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    padding: 0.3rem 0.8rem;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    border-radius: 2px;
+    transition: all 0.2s;
+    display: none;
+  }
+  .copy-btn.visible { display: inline-block; }
+  .copy-btn:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
+  .copy-btn.copied { border-color: #2ecc71; color: #2ecc71; }
+
+  .error-msg {
+    color: #e74c3c;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    margin-top: 0.4rem;
+    display: none;
+  }
+  .error-msg.visible { display: block; }
+
+  /* Options row */
+  .conv-options {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    flex-wrap: wrap;
+  }
+  .conv-opt-btn {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.55);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .conv-opt-btn.selected { background: var(--mono); color: white; border-color: var(--mono); }
+  .conv-opt-btn:hover { border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.8); }
+
+  /* ===== FOOTER ===== */
+  footer {
+    background: var(--ink);
+    color: rgba(245,240,232,0.45);
+    text-align: center;
+    padding: 2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    line-height: 2;
+  }
+  footer span { color: var(--accent-gold); }
+
+  /* ===== INLINE CODE ===== */
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--mono-bg);
+    color: var(--mono);
+    padding: 0.1em 0.4em;
+    font-size: 0.88em;
+    border-radius: 2px;
+  }
+
+  /* ===== BINARY DEMO ===== */
+  .binary-demo {
+    background: var(--paper-dark);
+    border: 1px solid var(--accent-light);
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    overflow-x: auto;
+  }
+  .binary-demo .row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .bit {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.95rem;
+    border: 1px solid var(--accent-light);
+  }
+  .bit.one { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .bit.zero { background: transparent; color: var(--ink-light); }
+  .row-label {
+    font-size: 10px;
+    color: var(--rule);
+    letter-spacing: 0.05em;
+    min-width: 110px;
+  }
+  .row-result {
+    font-size: 1.1rem;
+    color: var(--accent);
+    font-weight: 700;
+    margin-left: 0.5rem;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 600px) {
+    .masthead { padding: 1.5rem 1rem 1rem; }
+    #converter { padding: 1.5rem 1rem; margin: 0 -1rem; }
+    .container { padding: 0 1rem; }
+    .bit-table { font-size: 0.78rem; }
+    .bit-table td, .bit-table th { padding: 0.4rem 0.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- MASTHEAD -->
+<header class="masthead">
+  <p class="masthead-eyebrow">// Khoa học máy tính &amp; lịch sử công nghệ //</p>
+  <h1>
+    Mã <span class="accent">Nhị Phân</span>
+    <span class="binary-inline">01001101 01000001 00100000 01001110 01001000 01001001 00100000 01010000 01001000 01000001 01001110</span>
+  </h1>
+  <p class="masthead-sub">Ngôn ngữ nền tảng của thế giới số — Từ máy tính đến vũ trụ thông tin hiện đại</p>
+  <div class="masthead-meta">
+    <span>KHOA HỌC & CÔNG NGHỆ</span>
+    <span>TIN HỌC CƠ BẢN</span>
+    <span>CẬP NHẬT 2025</span>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav class="nav-bar">
+  <a href="#gioi-thieu">Giới thiệu</a>
+  <a href="#lich-su">Lịch sử</a>
+  <a href="#cach-hoat-dong">Cơ chế</a>
+  <a href="#cach-doc">Cách đọc</a>
+  <a href="#ung-dung">Ứng dụng</a>
+  <a href="#converter">Chuyển đổi</a>
+</nav>
+
+<div class="container">
+<article class="article-body">
+
+  <!-- GIỚI THIỆU -->
+  <section id="gioi-thieu">
+    <p class="section-label">// Mở đầu</p>
+    <h2>Thứ ngôn ngữ chỉ biết hai chữ</h2>
+
+    <p class="lead-paragraph">Toàn bộ thế giới số mà bạn đang sống — từ chiếc điện thoại trong tay, đến mạng xã hội, ngân hàng trực tuyến, phim ảnh trực tuyến — đều được xây dựng trên một ngôn ngữ cực kỳ đơn giản: chỉ có hai ký hiệu. <strong>0</strong> và <strong>1</strong>.</p>
+
+    <p>Mã nhị phân (<em>binary code</em>) là hệ thống số dùng cơ số 2, nghĩa là mỗi chữ số chỉ có thể là <code>0</code> hoặc <code>1</code>. Trong khi con người quen dùng hệ thập phân (10 chữ số từ 0 đến 9), máy tính hoạt động hoàn toàn dựa trên hai trạng thái điện: <strong>có điện</strong> (1) và <strong>không có điện</strong> (0).</p>
+
+    <div class="pull-quote">
+      <p>Hai ký hiệu tưởng chừng nghèo nàn nhất trong lịch sử toán học lại trở thành nền móng của nền văn minh kỹ thuật số phức tạp nhất mà nhân loại từng tạo ra.</p>
+    </div>
+
+    <p>Mỗi đơn vị thông tin nhỏ nhất gọi là <strong>bit</strong> (binary digit), có thể là 0 hoặc 1. Tám bit ghép lại tạo thành một <strong>byte</strong>, đủ để biểu diễn một ký tự văn bản. Từ đây, toàn bộ nội dung số — văn bản, hình ảnh, âm thanh, video — đều quy về những chuỗi 0 và 1 khổng lồ.</p>
+
+    <div class="fact-box">
+      <p class="fact-box-title">// Các đơn vị dữ liệu cơ bản</p>
+      <p><strong>1 Bit</strong> = 0 hoặc 1 — đơn vị nhỏ nhất</p>
+      <p><strong>1 Byte</strong> = 8 bit — biểu diễn 1 ký tự (ví dụ: chữ "A")</p>
+      <p><strong>1 Kilobyte (KB)</strong> = 1.024 byte</p>
+      <p><strong>1 Megabyte (MB)</strong> = 1.048.576 byte</p>
+      <p><strong>1 Gigabyte (GB)</strong> = 1.073.741.824 byte</p>
+      <p><strong>1 Terabyte (TB)</strong> = khoảng 1 nghìn tỷ byte</p>
+    </div>
+  </section>
+
+  <!-- LỊCH SỬ -->
+  <section id="lich-su">
+    <p class="section-label">// Lịch sử hình thành</p>
+    <h2>Hành trình 4.000 năm — Từ que đếm đến silicon</h2>
+
+    <p>Mã nhị phân không phải là phát minh của thế kỷ 20. Gốc rễ của nó có thể được truy nguyên về tận nền văn minh cổ đại, trải qua hàng thiên niên kỷ trước khi trở thành ngôn ngữ của máy tính hiện đại.</p>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <p class="timeline-year">~ 2000 TCN — ANCIENT EGYPT</p>
+        <p>Người Ai Cập cổ đại đã dùng một kỹ thuật nhân tương tự hệ nhị phân gọi là "nhân đôi liên tiếp" để tính toán. Đây là một trong những dấu hiệu sớm nhất của tư duy nhị phân trong toán học.</p>
+      </div>
+      <div class="timeline-item">
+        <p class="timeline-year">~9 TCN — TRUNG QUỐC CỔ ĐẠI</p>
+        <p>Kinh Dịch (<em>I Ching</em>) của nhà hiền triết Phục Hy sử dụng các quẻ gồm vạch liền (—) và vạch đứt (- -) — một hệ thống nhị phân 6 bit, tạo ra 64 quẻ khác nhau. Đây được xem là biểu hiện triết học nhị phân lâu đời nhất.</p>
+      </div>
+      <div class="timeline-item">
+        <p class="timeline-year">1605 — FRANCIS BACON</p>
+        <p>Triết gia người Anh Francis Bacon mô tả một hệ thống mật mã dùng hai chữ cái A và B để mã hóa toàn bộ bảng chữ cái — tiền thân của mã nhị phân hiện đại trong truyền thông.</p>
+      </div>
+      <div class="timeline-item">
+        <p class="timeline-year">1679 — GOTTFRIED LEIBNIZ</p>
+        <p>Nhà toán học và triết học người Đức Gottfried Wilhelm Leibniz chính thức phát triển và công bố hệ thống số nhị phân đầy đủ. Ông bị ảnh hưởng bởi Kinh Dịch và nhận ra: <em>"Mọi số đều có thể biểu diễn bằng 0 và 1."</em> Leibniz được xem là cha đẻ của hệ nhị phân hiện đại.</p>
+      </div>
+      <div class="timeline-item">
+        <p class="timeline-year">1854 — GEORGE BOOLE</p>
+        <p>Nhà toán học người Anh George Boole xuất bản <em>"An Investigation of the Laws of Thought"</em>, đặt nền móng cho đại số Boolean — hệ logic chỉ dùng hai giá trị TRUE/FALSE (1/0). Đây là viên gạch nền tảng của mọi vi mạch điện tử.</p>
+      </div>
+      <div class="timeline-item">
+        <p class="timeline-year">1937–1938 — CLAUDE SHANNON</p>
+        <p>Trong luận văn thạc sĩ xuất sắc nhất thế kỷ 20, kỹ sư Claude Shannon chứng minh rằng đại số Boolean có thể được thực hiện bằng mạch điện. Ông kết nối toán học Boole với kỹ thuật điện — khai sinh ra nền tảng lý thuyết của máy tính số.</p>
+      </div>
+      <div class="timeline-item">
+        <p class="timeline-year">1945 — ENIAC & VON NEUMANN</p>
+        <p>Máy tính điện tử đầu tiên ENIAC được xây dựng dùng hệ thập phân, nhưng kiến trúc von Neumann sau đó đề xuất lưu trữ chương trình dưới dạng nhị phân — mô hình mà mọi máy tính hiện đại đều kế thừa.</p>
+      </div>
+      <div class="timeline-item">
+        <p class="timeline-year">1948 — LÝ THUYẾT THÔNG TIN</p>
+        <p>Claude Shannon công bố bài báo khai sinh "lý thuyết thông tin", đặt ra khái niệm <strong>bit</strong> như đơn vị thông tin cơ bản. Từ đây, mã nhị phân có nền tảng toán học chặt chẽ để phát triển thành ngôn ngữ vũ trụ của thời đại số.</p>
+      </div>
+      <div class="timeline-item">
+        <p class="timeline-year">1971 — KỶ NGUYÊN VI XỬ LÝ</p>
+        <p>Intel ra mắt vi xử lý 4004 — chip đầu tiên tích hợp toàn bộ bộ xử lý trên một mảnh silicon. Hàng triệu transitor đóng/mở (1/0) trong một không gian cỡ móng tay, mở ra kỷ nguyên máy tính cá nhân.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CƠ CHẾ HOẠT ĐỘNG -->
+  <section id="cach-hoat-dong">
+    <p class="section-label">// Nguyên lý hoạt động</p>
+    <h2>Tại sao máy tính chỉ hiểu 0 và 1?</h2>
+
+    <p>Câu trả lời nằm ở vật lý của transitor — linh kiện bán dẫn cơ bản trong mọi vi mạch. Một transitor hoạt động như một công tắc điện: hoặc đang <strong>dẫn điện</strong> (trạng thái ON = 1), hoặc <strong>không dẫn điện</strong> (trạng thái OFF = 0).</p>
+
+    <p>Chỉ có hai trạng thái này vì đây là cách đáng tin cậy nhất để biểu diễn thông tin: giữa 0V và 5V thì rõ ràng, ít nhầm lẫn. Nếu dùng 10 mức điện áp (hệ thập phân), nhiễu điện sẽ gây ra vô số lỗi. Hai trạng thái = độ tin cậy tuyệt đối.</p>
+
+    <h3>Hệ đếm vị trí: sức mạnh của vị trí</h3>
+
+    <p>Giống như trong hệ thập phân, mỗi vị trí trong số nhị phân có trọng số theo lũy thừa của 2:</p>
+
+    <div class="binary-demo">
+      <div class="row">
+        <span class="row-label">Hệ 10 (thập phân):</span>
+        <span>Hàng: <strong>1000</strong> · <strong>100</strong> · <strong>10</strong> · <strong>1</strong></span>
+      </div>
+      <div class="row">
+        <span class="row-label">Hệ 2 (nhị phân):</span>
+        <span>Hàng: <strong>128</strong> · <strong>64</strong> · <strong>32</strong> · <strong>16</strong> · <strong>8</strong> · <strong>4</strong> · <strong>2</strong> · <strong>1</strong></span>
+      </div>
+      <hr style="border: none; border-top: 1px solid var(--accent-light); margin: 1rem 0;">
+      <p style="font-size:11px; color: var(--rule); margin-bottom: 0.8rem; letter-spacing: 0.05em;">VÍ DỤ: Số 65 (chữ "A" trong ASCII) = 01000001</p>
+      <div class="row">
+        <span class="row-label">Các bit:</span>
+        <div class="bit zero">0</div>
+        <div class="bit one">1</div>
+        <div class="bit zero">0</div>
+        <div class="bit zero">0</div>
+        <div class="bit zero">0</div>
+        <div class="bit zero">0</div>
+        <div class="bit zero">0</div>
+        <div class="bit one">1</div>
+        <span class="row-result">= 65 = "A"</span>
+      </div>
+      <div class="row">
+        <span class="row-label">Giá trị vị trí:</span>
+        <span style="color: var(--rule); font-size: 11px;">0×128 + 1×64 + 0×32 + 0×16 + 0×8 + 0×4 + 0×2 + 1×1 = <strong>64 + 1 = 65</strong></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CÁCH ĐỌC & DỊCH -->
+  <section id="cach-doc">
+    <p class="section-label">// Phương pháp giải mã</p>
+    <h2>Cách đọc và dịch mã nhị phân</h2>
+
+    <h3>Phương pháp 1 — Chuyển đổi số nhị phân sang thập phân</h3>
+    <p>Để đọc một số nhị phân, nhân từng bit với lũy thừa 2 tương ứng (từ phải sang trái, bắt đầu từ 2⁰), rồi cộng tổng lại.</p>
+    <p><strong>Ví dụ:</strong> <code>1011</code> = 1×2³ + 0×2² + 1×2¹ + 1×2⁰ = 8 + 0 + 2 + 1 = <strong>11</strong></p>
+
+    <h3>Phương pháp 2 — Bảng ASCII: từ số sang chữ</h3>
+    <p>ASCII (American Standard Code for Information Interchange) là bộ mã chuẩn ánh xạ mỗi ký tự văn bản với một số từ 0–127. Mỗi ký tự được lưu trong 1 byte (8 bit).</p>
+
+    <table class="bit-table">
+      <thead>
+        <tr>
+          <th>Ký tự</th>
+          <th>Thập phân</th>
+          <th>Nhị phân (8-bit)</th>
+          <th>Mô tả</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="char-cell">A</td><td>65</td><td class="binary-cell">01000001</td><td>Chữ hoa A</td></tr>
+        <tr><td class="char-cell">B</td><td>66</td><td class="binary-cell">01000010</td><td>Chữ hoa B</td></tr>
+        <tr><td class="char-cell">a</td><td>97</td><td class="binary-cell">01100001</td><td>Chữ thường a</td></tr>
+        <tr><td class="char-cell">Z</td><td>90</td><td class="binary-cell">01011010</td><td>Chữ hoa Z</td></tr>
+        <tr><td class="char-cell">0</td><td>48</td><td class="binary-cell">00110000</td><td>Chữ số 0</td></tr>
+        <tr><td class="char-cell">!</td><td>33</td><td class="binary-cell">00100001</td><td>Dấu chấm than</td></tr>
+        <tr><td class="char-cell">SPACE</td><td>32</td><td class="binary-cell">00100000</td><td>Khoảng trắng</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Phương pháp 3 — Đọc văn bản nhị phân</h3>
+    <p>Để đọc một đoạn văn bản mã hóa nhị phân, chia chuỗi bit thành từng nhóm 8 bit, chuyển mỗi nhóm sang số thập phân, rồi tra bảng ASCII để tìm ký tự tương ứng.</p>
+
+    <p><strong>Ví dụ:</strong> <code>01001000 01101001 00100001</code></p>
+    <p>→ <code>01001000</code> = 72 = "H" &nbsp;|&nbsp; <code>01101001</code> = 105 = "i" &nbsp;|&nbsp; <code>00100001</code> = 33 = "!" &nbsp;→&nbsp; <strong>"Hi!"</strong></p>
+
+    <div class="fact-box">
+      <p class="fact-box-title">// Mẹo nhớ nhanh các giá trị nhị phân thường gặp</p>
+      <p><strong>0000 0000</strong> = 0 &nbsp;|&nbsp; <strong>1111 1111</strong> = 255 (giá trị lớn nhất của 1 byte)</p>
+      <p><strong>0000 0001</strong> = 1 &nbsp;|&nbsp; <strong>0000 0010</strong> = 2 &nbsp;|&nbsp; <strong>0000 0100</strong> = 4 &nbsp;|&nbsp; <strong>0000 1000</strong> = 8</p>
+      <p><strong>Quy tắc:</strong> Mỗi lần dịch bit sang trái 1 vị trí = nhân đôi giá trị</p>
+      <p><strong>Mẹo:</strong> Để kiểm tra nhanh, đếm số bit <strong>1</strong> và vị trí của chúng từ phải sang trái (vị trí 0, 1, 2... tương ứng giá trị 1, 2, 4...)</p>
+    </div>
+  </section>
+
+  <!-- ỨNG DỤNG -->
+  <section id="ung-dung">
+    <p class="section-label">// Vai trò trong thế giới thực</p>
+    <h2>Mã nhị phân ở khắp nơi — Những ứng dụng bạn không ngờ tới</h2>
+
+    <p>Mã nhị phân không chỉ là khái niệm lý thuyết trong sách giáo khoa. Nó hiện diện trong mọi khía cạnh của cuộc sống số hiện đại, từ những thứ hiển nhiên nhất đến những hệ thống quan trọng mà ta hoàn toàn không hay biết.</p>
+
+    <div class="app-grid">
+      <div class="app-card">
+        <div class="app-card-icon">01</div>
+        <p class="app-card-title">Vi xử lý & CPU</p>
+        <p>Hàng tỷ transitor trong CPU đóng/mở liên tục hàng tỷ lần mỗi giây — mỗi lần đó là một phép tính nhị phân.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-card-icon">10</div>
+        <p class="app-card-title">Lưu trữ dữ liệu</p>
+        <p>Ổ cứng (HDD/SSD), RAM, USB flash đều lưu dữ liệu dưới dạng trạng thái vật lý mã hóa thành 0 và 1.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-card-icon">11</div>
+        <p class="app-card-title">Mật mã học</p>
+        <p>Các thuật toán mã hóa AES, RSA, SHA-256 đều thực hiện phép XOR và phép dịch bit trên các chuỗi nhị phân.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-card-icon">00</div>
+        <p class="app-card-title">Truyền thông số</p>
+        <p>WiFi, 4G/5G, cáp quang — tất cả đều truyền dữ liệu dưới dạng xung tín hiệu biểu diễn các bit 0 và 1.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-card-icon">01</div>
+        <p class="app-card-title">Màu sắc trong đồ họa</p>
+        <p>Mỗi điểm ảnh (pixel) dùng 24 bit (3×8 bit) cho ba màu RGB, tạo ra hơn 16 triệu màu sắc khác nhau.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-card-icon">10</div>
+        <p class="app-card-title">Âm thanh kỹ thuật số</p>
+        <p>Nhạc MP3, AAC mã hóa sóng âm thành chuỗi số nhị phân. CD audio dùng 16 bit để lưu mỗi mẫu âm thanh.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-card-icon">11</div>
+        <p class="app-card-title">Địa chỉ IP</p>
+        <p>Địa chỉ IPv4 thực chất là 32 bit nhị phân (như 11000000.10101000.00000001.00000001 = 192.168.1.1).</p>
+      </div>
+      <div class="app-card">
+        <div class="app-card-icon">00</div>
+        <p class="app-card-title">Máy quét & mã vạch</p>
+        <p>Mã QR và barcode về bản chất là mẫu hình đen/trắng — nghĩa là 1/0 — được đọc bằng ánh sáng laser hoặc camera.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-card-icon">01</div>
+        <p class="app-card-title">AI & Machine Learning</p>
+        <p>Các mô hình AI xử lý hàng tỷ phép tính trên tensor — mảng số dấu phẩy động vẫn lưu dạng nhị phân trong bộ nhớ.</p>
+      </div>
+    </div>
+
+    <h3>Đặc biệt: Màu sắc RGB và nhị phân</h3>
+    <p>Khi bạn nhìn màu đỏ tươi <code>#FF0000</code> trên màn hình, thực chất đó là <code>11111111 00000000 00000000</code> — 8 bit toàn 1 cho kênh đỏ (=255), và 0 cho xanh lá và xanh dương. Mỗi bức ảnh chụp từ điện thoại của bạn là hàng triệu dòng dữ liệu như vậy.</p>
+
+    <h3>Nhị phân trong y học hiện đại</h3>
+    <p>Máy MRI, CT scan, máy siêu âm đều số hóa tín hiệu vật lý thành dữ liệu nhị phân, cho phép lưu trữ, truyền tải và phân tích hình ảnh y khoa bằng thuật toán. AI chẩn đoán ung thư từ hình ảnh X-quang cũng bắt đầu từ những bit 0 và 1 này.</p>
+  </section>
+
+</article>
+</div>
+
+<!-- CONVERTER SECTION -->
+<section id="converter">
+  <div class="container">
+    <div class="converter-header">
+      <p class="section-label">// Công cụ tương tác</p>
+      <h2>Bộ Chuyển Đổi Mã Nhị Phân</h2>
+      <p style="color: rgba(245,240,232,0.55); font-size: 0.9rem; margin-top: -0.5rem;">Thử ngay: chuyển văn bản thành 0 và 1, hoặc ngược lại</p>
+    </div>
+
+    <div class="converter-tabs">
+      <button class="tab-btn active" onclick="switchTab('text-to-bin')">Chữ → Nhị phân</button>
+      <button class="tab-btn" onclick="switchTab('bin-to-text')">Nhị phân → Chữ</button>
+      <button class="tab-btn" onclick="switchTab('dec-to-bin')">Số ↔ Nhị phân</button>
+    </div>
+
+    <!-- TEXT → BINARY -->
+    <div id="tab-text-to-bin" class="converter-panel active">
+      <span class="conv-label">Nhập văn bản (tiếng Việt, tiếng Anh, số, ký hiệu...)</span>
+      <textarea class="conv-textarea" id="t2b-input" placeholder="Nhập văn bản ở đây... ví dụ: Xin chào Việt Nam!" rows="4"></textarea>
+      <div class="conv-options">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: rgba(255,255,255,0.35); align-self: center; letter-spacing: 0.1em;">ĐỊNH DẠNG:</span>
+        <button class="conv-opt-btn selected" id="t2b-space-yes" onclick="selectOpt('t2b-sep','space')">Có dấu cách (dễ đọc)</button>
+        <button class="conv-opt-btn" id="t2b-space-no" onclick="selectOpt('t2b-sep','nospace')">Không cách (liền nhau)</button>
+        <button class="conv-opt-btn" id="t2b-space-nl" onclick="selectOpt('t2b-sep','newline')">Xuống dòng mỗi ký tự</button>
+      </div>
+      <button class="conv-btn" onclick="convertTextToBin()">► Chuyển thành mã nhị phân</button>
+      <span class="error-msg" id="t2b-error"></span>
+      <div id="t2b-result-wrap">
+        <span class="conv-result-label" id="t2b-result-label" style="display:none;">// KẾT QUẢ — MÃ NHỊ PHÂN</span>
+        <div class="conv-result" id="t2b-result"></div>
+        <button class="copy-btn" id="t2b-copy" onclick="copyResult('t2b-result','t2b-copy')">COPY KẾT QUẢ</button>
+      </div>
+    </div>
+
+    <!-- BINARY → TEXT -->
+    <div id="tab-bin-to-text" class="converter-panel">
+      <span class="conv-label">Nhập mã nhị phân (nhóm 8 bit, phân tách bởi dấu cách hoặc liền nhau)</span>
+      <textarea class="conv-textarea" id="b2t-input" placeholder="01001000 01100101 01101100 01101100 01101111" rows="4"></textarea>
+      <button class="conv-btn" onclick="convertBinToText()">► Giải mã thành văn bản</button>
+      <span class="error-msg" id="b2t-error"></span>
+      <div id="b2t-result-wrap">
+        <span class="conv-result-label" id="b2t-result-label" style="display:none;">// KẾT QUẢ — VĂN BẢN</span>
+        <div class="conv-result" id="b2t-result" style="color: #f0d080;"></div>
+        <button class="copy-btn" id="b2t-copy" onclick="copyResult('b2t-result','b2t-copy')">COPY KẾT QUẢ</button>
+      </div>
+    </div>
+
+    <!-- DEC ↔ BINARY -->
+    <div id="tab-dec-to-bin" class="converter-panel">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <div>
+          <span class="conv-label">Số thập phân → nhị phân</span>
+          <input type="number" class="conv-textarea" id="dec-input" placeholder="Nhập số (0–4294967295)" style="min-height: auto; height: 48px; resize: none;" min="0">
+          <button class="conv-btn" style="margin-top: 0.5rem;" onclick="convertDecToBin()">► Chuyển</button>
+          <div class="conv-result" id="dec-result" style="min-height: 50px;"></div>
+        </div>
+        <div>
+          <span class="conv-label">Số nhị phân → thập phân</span>
+          <input type="text" class="conv-textarea" id="bin-input" placeholder="Nhập số nhị phân (vd: 1010)" style="min-height: auto; height: 48px; resize: none; font-family: 'JetBrains Mono', monospace;">
+          <button class="conv-btn" style="margin-top: 0.5rem;" onclick="convertBinToDec()">► Chuyển</button>
+          <div class="conv-result" id="bin-result" style="min-height: 50px; color: #f0d080;"></div>
+        </div>
+      </div>
+      <span class="error-msg" id="dec-error"></span>
+    </div>
+
+  </div>
+</section>
+
+<div class="container">
+<article>
+  <section style="padding: 2.5rem 0; border-top: 1px solid var(--accent-light);">
+    <p class="section-label">// Kết luận</p>
+    <h2>Vũ trụ số bắt đầu từ hai ký hiệu</h2>
+    <p>Mã nhị phân là minh chứng đẹp nhất cho một sự thật triết học: <strong>sự đơn giản tuyệt đối có thể sinh ra độ phức tạp vô hạn</strong>. Từ hai ký hiệu 0 và 1, nhân loại đã xây dựng nên toàn bộ nền văn minh kỹ thuật số — từ những trang web bạn lướt mỗi ngày, đến những mô hình trí tuệ nhân tạo đang định hình lại thế giới.</p>
+    <p>Hiểu về mã nhị phân không chỉ là kiến thức kỹ thuật — đó là hiểu ngôn ngữ nền tảng của thời đại chúng ta đang sống. Mỗi email bạn gửi, mỗi ảnh bạn chụp, mỗi nhịp nhạc bạn nghe — tất cả đều bắt đầu và kết thúc với những chuỗi 0 và 1 im lặng, vô hình, nhưng vô cùng quyền năng.</p>
+
+    <div class="pull-quote">
+      <p>Trong một vũ trụ phức tạp, đôi khi câu trả lời giản dị nhất lại là nền tảng của mọi sự phức tạp. Đó chính là bài học của mã nhị phân.</p>
+    </div>
+  </section>
+</article>
+</div>
+
+<footer>
+  <div>MÃ NHỊ PHÂN — TÀI LIỆU KHOA HỌC MÁY TÍNH</div>
+  <div>01001101 01000001 00100000 01001110 01001000 01001001 00100000 01010000 01001000 01000001 01001110</div>
+  <div style="margin-top: 0.5rem;"><span>0</span> và <span>1</span> — Nền tảng của mọi nền tảng số</div>
+</footer>
+
+<script>
+  // ---- TAB SWITCHING ----
+  let currentT2BSep = 'space';
+
+  function switchTab(tabId) {
+    document.querySelectorAll('.converter-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tabId).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  function selectOpt(group, val) {
+    currentT2BSep = val;
+    ['space','nospace','newline'].forEach(v => {
+      const btn = document.getElementById('t2b-space-' + (v === 'space' ? 'yes' : v === 'nospace' ? 'no' : 'nl'));
+      if (btn) btn.classList.toggle('selected', v === val);
+    });
+  }
+
+  // ---- TEXT → BINARY ----
+  function convertTextToBin() {
+    const input = document.getElementById('t2b-input').value;
+    const errEl = document.getElementById('t2b-error');
+    const resultEl = document.getElementById('t2b-result');
+    const labelEl = document.getElementById('t2b-result-label');
+    const copyEl = document.getElementById('t2b-copy');
+
+    errEl.classList.remove('visible');
+
+    if (!input.trim() && input.length === 0) {
+      errEl.textContent = 'Vui lòng nhập văn bản cần chuyển đổi.';
+      errEl.classList.add('visible');
+      return;
+    }
+
+    try {
+      const bytes = new TextEncoder().encode(input);
+      let bits = Array.from(bytes).map(b => b.toString(2).padStart(8, '0'));
+
+      let output;
+      if (currentT2BSep === 'space') output = bits.join(' ');
+      else if (currentT2BSep === 'nospace') output = bits.join('');
+      else output = bits.join('\n');
+
+      resultEl.textContent = output;
+      resultEl.classList.add('has-content');
+      labelEl.style.display = 'block';
+      copyEl.classList.add('visible');
+    } catch(e) {
+      errEl.textContent = 'Lỗi khi chuyển đổi: ' + e.message;
+      errEl.classList.add('visible');
+    }
+  }
+
+  // ---- BINARY → TEXT ----
+  function convertBinToText() {
+    const raw = document.getElementById('b2t-input').value.trim();
+    const errEl = document.getElementById('b2t-error');
+    const resultEl = document.getElementById('b2t-result');
+    const labelEl = document.getElementById('b2t-result-label');
+    const copyEl = document.getElementById('b2t-copy');
+
+    errEl.classList.remove('visible');
+
+    if (!raw) {
+      errEl.textContent = 'Vui lòng nhập chuỗi nhị phân.';
+      errEl.classList.add('visible');
+      return;
+    }
+
+    // Remove all whitespace, then split into 8-bit chunks
+    const clean = raw.replace(/\s+/g, '');
+
+    if (!/^[01]+$/.test(clean)) {
+      errEl.textContent = 'Chuỗi nhị phân chỉ được chứa 0 và 1 (và dấu cách để phân nhóm).';
+      errEl.classList.add('visible');
+      return;
+    }
+
+    if (clean.length % 8 !== 0) {
+      errEl.textContent = `Độ dài chuỗi (${clean.length} bit) không chia hết cho 8. Vui lòng kiểm tra lại — mỗi ký tự cần đúng 8 bit.`;
+      errEl.classList.add('visible');
+      return;
+    }
+
+    try {
+      const bytes = [];
+      for (let i = 0; i < clean.length; i += 8) {
+        bytes.push(parseInt(clean.substr(i, 8), 2));
+      }
+      const text = new TextDecoder('utf-8', { fatal: false }).decode(new Uint8Array(bytes));
+      resultEl.textContent = text;
+      resultEl.classList.add('has-content');
+      labelEl.style.display = 'block';
+      copyEl.classList.add('visible');
+    } catch(e) {
+      errEl.textContent = 'Lỗi giải mã: ' + e.message;
+      errEl.classList.add('visible');
+    }
+  }
+
+  // ---- DEC ↔ BINARY ----
+  function convertDecToBin() {
+    const val = parseInt(document.getElementById('dec-input').value, 10);
+    const res = document.getElementById('dec-result');
+    const errEl = document.getElementById('dec-error');
+    errEl.classList.remove('visible');
+
+    if (isNaN(val) || val < 0) {
+      errEl.textContent = 'Nhập một số nguyên không âm.';
+      errEl.classList.add('visible');
+      return;
+    }
+    const bin = val.toString(2);
+    const hex = val.toString(16).toUpperCase();
+    const oct = val.toString(8);
+    res.textContent = `Nhị phân:   ${bin}\nHex (16):   ${hex}\nBát phân:   ${oct}`;
+    res.classList.add('has-content');
+  }
+
+  function convertBinToDec() {
+    const val = document.getElementById('bin-input').value.trim();
+    const res = document.getElementById('bin-result');
+    const errEl = document.getElementById('dec-error');
+    errEl.classList.remove('visible');
+
+    if (!val || !/^[01]+$/.test(val)) {
+      errEl.textContent = 'Nhập một số nhị phân hợp lệ (chỉ chứa 0 và 1).';
+      errEl.classList.add('visible');
+      return;
+    }
+    const dec = parseInt(val, 2);
+    res.textContent = `Thập phân: ${dec}\nHex (16):  ${dec.toString(16).toUpperCase()}\nBát phân:  ${dec.toString(8)}`;
+    res.classList.add('has-content');
+  }
+
+  // ---- COPY ----
+  function copyResult(resultId, btnId) {
+    const text = document.getElementById(resultId).textContent;
+    const btn = document.getElementById(btnId);
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '✓ ĐÃ COPY';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'COPY KẾT QUẢ';
+        btn.classList.remove('copied');
+      }, 2000);
+    }).catch(() => {
+      // fallback
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      btn.textContent = '✓ ĐÃ COPY';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'COPY KẾT QUẢ';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  // ---- ENTER KEY SUPPORT ----
+  document.getElementById('t2b-input').addEventListener('keydown', e => {
+    if (e.ctrlKey && e.key === 'Enter') convertTextToBin();
+  });
+  document.getElementById('b2t-input').addEventListener('keydown', e => {
+    if (e.ctrlKey && e.key === 'Enter') convertBinToText();
+  });
+  document.getElementById('dec-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') convertDecToBin();
+  });
+  document.getElementById('bin-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') convertBinToDec();
+  });
+</script>
+
+</body>
+</html>
